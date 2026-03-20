@@ -79,7 +79,7 @@ FIELD_MAP = {
 # Case-insensitive matching is attempted; unrecognized values are dropped with a warning.
 FIELD_ALLOWED_VALUES: dict[str, set[str]] = {
     "field_ai_application":             {"yes", "no"},
-    "field_business_criticality_level": {"critical", "high", "medium", "low"},
+    "field_business_criticality_level": {"core_infrastructure", "critical", "high", "medium", "low"},
     "field_confidence":                 {"high", "medium", "low"},
     "field_contains_phi":               {"yes", "no"},
     "field_division":                   {"sbuh", "sbsh", "sbelih", "cpmp", "sbas", "hsc", "mhl", "sdm", "", ""},
