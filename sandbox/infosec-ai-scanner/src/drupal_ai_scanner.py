@@ -44,6 +44,7 @@ import hashlib
 import json
 import logging
 import os
+import subprocess
 import sys
 import time
 from datetime import datetime
@@ -63,6 +64,7 @@ logger = logging.getLogger(__name__)
 DEFAULT_PROGRESS_FILE = Path(__file__).parent.parent / "ai_scan_progress.json"
 FIRST_RUN_LIMIT = 10
 PAGE_SIZE = 50
+REVIEW_EMAIL = os.environ.get("REVIEW_EMAIL", "")
 
 
 # ---------------------------------------------------------------------------
@@ -389,6 +391,49 @@ def map_ai_result_to_attributes(ai_result: dict) -> dict | None:
 
 
 # ---------------------------------------------------------------------------
+# Review notification
+# ---------------------------------------------------------------------------
+
+def build_review_email(flagged: list[dict], base_url: str) -> str:
+    lines = [
+        "Hi the security team,",
+        "",
+        f"The AI software scanner flagged {len(flagged)} application(s) for security review.",
+        f"Each one has Risk Review Required = yes in Drupal ({base_url}).",
+        "",
+    ]
+    for f in flagged:
+        lines.append(f"- {f['title']}")
+        lines.append(f"    Has AI: {f['has_ai']}   Confidence: {f['confidence']}")
+        lines.append(f"    Reason: {f['reason']}")
+        lines.append("")
+    lines += [
+        "This is an automated message from the AI Software Scanner.",
+        "Questions: ...",
+        "",
+        "Thanks,",
+        "...",
+    ]
+    return "\n".join(lines)
+
+
+def send_review_email(flagged: list[dict], base_url: str) -> None:
+    """Mail flagged nodes to the reviewer. Uses the system mail command, same as run_scanner.sh."""
+    if not flagged:
+        return
+    subject = f"AI Scanner: {len(flagged)} application(s) need security review"
+    body = build_review_email(flagged, base_url)
+    try:
+        subprocess.run(
+            ["/usr/bin/mail", "-s", subject, REVIEW_EMAIL],
+            input=body, text=True, check=True, timeout=30,
+        )
+        logger.info("Review email sent to %s (%d flagged)", REVIEW_EMAIL, len(flagged))
+    except Exception as exc:  # mail failure must not fail the scan
+        logger.error("Review email to %s failed: %s", REVIEW_EMAIL, exc)
+
+
+# ---------------------------------------------------------------------------
 # Drupal: patching nodes
 # ---------------------------------------------------------------------------
 
@@ -502,6 +547,7 @@ def main() -> None:
     total = len(nodes)
     succeeded = 0
     failed = 0
+    flagged: list[dict] = []
     start_time = time.monotonic()
 
     stats: dict = {"started": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
@@ -538,6 +584,13 @@ def main() -> None:
             )
             if updated_changed is not None:
                 succeeded += 1
+                if attributes["field_risk_review_required"] == "yes":
+                    flagged.append({
+                        "title": title,
+                        "has_ai": ai_result["has_ai"],
+                        "confidence": attributes["field_confidence"],
+                        "reason": attributes["field_reason"],
+                    })
                 tracked_nodes[uuid] = {
                     "scanned_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     "node_changed": updated_changed or node["changed"],
@@ -571,6 +624,7 @@ def main() -> None:
         logger.info("  Elapsed            : %.1fs", elapsed)
         if failed:
             logger.warning("Re-run to retry %d failed node(s)", failed)
+        send_review_email(flagged, config["base_url"])
 
 
 if __name__ == "__main__":
