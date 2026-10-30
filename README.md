@@ -1,40 +1,41 @@
-# Drupal Excel Importer
+# Drupal AI Classifier
 
-Software inventory lives in Excel, but Drupal needs clean JSON:API content. Manual entry is slow, inconsistent, and duplicates products across sheets.
+Scripts that keep a Drupal software inventory clean and tag each product with whether it has AI features.
 
-This project reads the spreadsheet, merges duplicate vendor/product rows, collects site usage flags, maps columns to Drupal fields, and creates Drupal nodes through JSON:API.
+The main programs live in `sandbox/infosec-ai-scanner/src/`:
 
-## Example
+| Script | What it does |
+|---|---|
+| `drupal_importer.py` | Reads a software inventory spreadsheet, merges duplicate vendor/product rows, and POSTs one Drupal node per product via JSON:API. |
+| `drupal_ai_scanner.py` | Fetches Drupal nodes, asks OpenAI / Azure OpenAI whether each product has AI features, and PATCHes the result back. Incremental: only new or changed nodes are rescanned. Emails a review list for flagged items. |
+| `drupal_merge_duplicates.py` | Finds duplicate nodes, merges them into the lowest node ID, deletes the rest. Supports `--dry-run`, `--diff`, `--force-merge`. |
+| `normalize_smart_quotes.py` | Replaces Unicode quotes in text fields with ASCII. `--apply` to write. |
+| `normalize_title_dashes.py` | Collapses `--` in node titles to `-`. `--apply` to write. |
+| `backfill.py` | Recomputes content hashes for already-scanned nodes. |
 
-If `Adobe + Acrobat` appears on multiple sheets, the importer combines those rows into one record, unions the site codes marked with `X`, and posts a single Drupal node like `Adobe — Acrobat`.
+`sandbox/sbin/` has cron wrappers for running the scanner on a server.
+
+## Setup
+
+```bash
+cd sandbox/infosec-ai-scanner
+uv sync
+cp ../../.env.example .env   # fill in Drupal and OpenAI credentials
+```
+
+Set `SITE_COLUMNS` in `.env` to the spreadsheet column headers that mark site usage, comma-separated, in sheet order:
+
+```env
+SITE_COLUMNS=SITE_A,SITE_B,SITE_C
+```
 
 ## Usage
 
-Install dependencies:
-
 ```bash
-uv sync
+cd sandbox/infosec-ai-scanner/src
+python drupal_importer.py --dry-run --spreadsheet /path/to/inventory.xlsx
+python drupal_ai_scanner.py
+python drupal_merge_duplicates.py --dry-run
 ```
 
-Create a `.env` file:
-
-```env
-DRUPAL_BASE_URL=https://your-drupal-site
-DRUPAL_USERNAME=your-username
-DRUPAL_PASSWORD=your-password
-DRUPAL_CONTENT_TYPE=software_inventory
-```
-
-Preview the import:
-
-```bash
-python src/drupal_importer.py --dry-run --spreadsheet /path/to/software_inventory.xlsx
-```
-
-Run the live import:
-
-```bash
-python src/drupal_importer.py --spreadsheet /path/to/software_inventory.xlsx
-```
-
-<br>
+Every script that writes to Drupal has a dry-run or preview mode. Use it first.

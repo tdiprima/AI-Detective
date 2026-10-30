@@ -396,7 +396,7 @@ def map_ai_result_to_attributes(ai_result: dict) -> dict | None:
 
 def build_review_email(flagged: list[dict], base_url: str) -> str:
     lines = [
-        "Hi the security team,",
+        "Hello,",
         "",
         f"The AI software scanner flagged {len(flagged)} application(s) for security review.",
         f"Each one has Risk Review Required = yes in Drupal ({base_url}).",

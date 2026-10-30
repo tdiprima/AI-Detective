@@ -54,8 +54,12 @@ DEFAULT_PROGRESS_FILE = Path(__file__).parent.parent / "import_progress.json"
 # Sheets that are metadata/reference — not software rows
 SKIP_SHEETS = {"MASTER Spreadsheet", "Priority Level Definitions", "Dropdowns", "Sheet1"}
 
-# The 8 site columns in the spreadsheet (cell value "X" = used at that site)
-SITE_COLUMNS = ["", "", "", "", "", "", "", "", "", ""]
+# Site columns in the spreadsheet (cell value "X" = used at that site).
+# Comma-separated list from SITE_COLUMNS in .env; kept out of the repo.
+load_dotenv()
+SITE_COLUMNS = [s.strip() for s in os.environ.get("SITE_COLUMNS", "").split(",") if s.strip()]
+if not SITE_COLUMNS:
+    raise SystemExit("SITE_COLUMNS is not set in .env (comma-separated site column headers)")
 
 # Spreadsheet column label (lowercase) → Drupal field machine name
 FIELD_MAP = {

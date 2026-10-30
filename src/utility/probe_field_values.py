@@ -20,6 +20,10 @@ from dotenv import load_dotenv
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+# Site codes come from SITE_COLUMNS in .env (comma-separated), kept out of the repo.
+load_dotenv()
+_SITE_CODES = [s.strip() for s in os.environ.get("SITE_COLUMNS", "").split(",") if s.strip()]
+
 CANDIDATES: dict[str, list] = {
     "field_business_criticality_level": [
         "Mission Critical", "mission_critical", "mission critical",
@@ -55,14 +59,8 @@ CANDIDATES: dict[str, list] = {
         "Retired", "retired", "RETIRED",
         "1", "0",
     ],
-    "field_division": [
-        "", "", "", "", "", "", "", "",
-        "sbuh", "sbsh", "sbelih", "cpmp", "sbas", "hsc", "mhl", "sdm",
-    ],
-    "field_sites_used": [
-        "", "", "", "", "", "", "", "",
-        "sbuh", "sbsh", "sbelih", "cpmp", "sbas", "hsc", "mhl", "sdm",
-    ],
+    "field_division": _SITE_CODES + [s.lower() for s in _SITE_CODES],
+    "field_sites_used": _SITE_CODES + [s.lower() for s in _SITE_CODES],
 }
 
 # Use a unique suffix so probe nodes are easy to find and delete

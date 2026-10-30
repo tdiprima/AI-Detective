@@ -41,15 +41,7 @@ scanner_output_fields:
 sites_used:
   drupal_field: field_sites_used
   drupal_type: array          # multi-value field, max 8
-  spreadsheet_columns:
-    - 
-    - 
-    - 
-    - 
-    - 
-    - 
-    - 
-    - 
+  spreadsheet_columns: from SITE_COLUMNS env var (comma-separated, see .env.example)
   transform: collect_marked   # include column name in array if cell value == "X"
 
 # These Drupal fields have no corresponding spreadsheet column.

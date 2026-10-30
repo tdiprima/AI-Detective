@@ -540,7 +540,7 @@ def classify_sites_field(
     if not excel_sites_str:
         return (
             STATUS_MISSING_SOURCE,
-            "No site columns (, , , etc.) were marked with X in Excel — "
+            "No site columns were marked with X in Excel — "
             "no site data existed to import",
         )
 
@@ -576,7 +576,7 @@ def audit_record(
     for drupal_field in ALL_AUDITABLE_FIELDS:
         excel_col = FIELD_MAP_REVERSE.get(
             drupal_field,
-            "site columns (//…)" if drupal_field == "field_sites_used" else "?",
+            "site columns" if drupal_field == "field_sites_used" else "?",
         )
         rfd = rfd_for_record.get(drupal_field)
 
