@@ -1,6 +1,6 @@
 # AI Detective 🕵️‍♂️ 
 
-Scripts that keep a Drupal software inventory clean and tag each product with whether it has AI features.
+Does this software contain AI?  This repo finds out!
 
 The main programs live in `sandbox/infosec-ai-scanner/src/`:
 
